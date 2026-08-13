@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Dream Life</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --green: #22c55e;
+      --red: #ef4444;
+      --blue: #38bdf8;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    }
+    #app {
+      height: 100%;
+      height: 100dvh;
+      max-width: 430px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      background: var(--bg);
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      flex-shrink: 0;
+      padding: calc(var(--safe-top) + 16px) 20px 12px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .greeting {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+    .subtitle {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ===== FILTER TABS ===== */
+    .filters {
+      display: flex;
+      gap: 8px;
+      padding: 12px 20px 8px;
+      flex-shrink: 0;
+    }
+    .filter-btn {
+      flex: 1;
+      padding: 8px 0;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .filter-btn.active {
+      background: var(--card);
+      color: var(--text);
+      border-color: var(--blue);
+    }
+
+    /* ===== SCROLLABLE LIST ===== */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 8px 16px 100px;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 600;
+      margin: 18px 0 8px 4px;
+    }
+
+    .action-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--card);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      transition: transform 0.12s;
+    }
+    .action-row:active { transform: scale(0.98); }
+    .action-row.done {
+      border-color: color-mix(in srgb, var(--green) 40%, transparent);
+      background: color-mix(in srgb, var(--green) 8%, var(--card));
+    }
+
+    .status-dot {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2.5px solid var(--red);
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+    }
+    .action-row.done .status-dot {
+      background: var(--green);
+      border-color: var(--green);
+    }
+    .status-dot svg {
+      width: 13px;
+      height: 13px;
+      opacity: 0;
+    }
+    .action-row.done .status-dot svg { opacity: 1; }
+
+    .action-info { flex: 1; min-width: 0; }
+    .action-name {
+      font-size: 0.95rem;
+      font-weight: 500;
+      line-height: 1.3;
+    }
+    .action-row.done .action-name {
+      color: var(--muted);
+      text-decoration: line-through;
+    }
+    .action-meta {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* ===== BOTTOM BAR ===== */
+    .bottom-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding: 10px 16px calc(var(--safe-bottom) + 10px);
+      display: flex;
+      gap: 10px;
+      z-index: 40;
+    }
+    .bottom-btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .bottom-btn.primary {
+      background: var(--blue);
+      color: #0f172a;
+    }
+    .bottom-btn.secondary {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    /* ===== POPUP: DO YOU LIKE RESULT? ===== */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+      padding-bottom: calc(var(--safe-bottom) + 16px);
+    }
+    .overlay.show { display: flex; }
+
+    .popup {
+      background: var(--card);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 400px;
+      padding: 24px 20px 20px;
+      border: 1px solid var(--border);
+    }
+    .popup-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .popup-sub {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 22px;
+      line-height: 1.4;
+    }
+    .popup-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .popup-btn {
+      padding: 15px;
+      border-radius: 12px;
+      border: none;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .popup-btn.yes {
+      background: var(--green);
+      color: #052e16;
+    }
+    .popup-btn.no {
+      background: var(--red);
+      color: white;
+    }
+    .popup-btn.edit {
+      background: var(--border);
+      color: var(--text);
+    }
+    .popup-btn.close {
+      background: transparent;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    /* ===== EDIT SCREEN ===== */
+    .edit-screen {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+      display: none;
+      flex-direction: column;
+      z-index: 60;
+    }
+    .edit-screen.show { display: flex; }
+    .edit-header {
+      padding: calc(var(--safe-top) + 14px) 16px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--blue);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .edit-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 16px;
+    }
+    .form-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 6px;
+      display: block;
+    }
+    .form-input {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      color: var(--text);
+      font-size: 1rem;
+      margin-bottom: 18px;
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: var(--blue);
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      padding: 60px 20px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- HEADER -->
+    <header>
+      <div class="greeting" id="greeting">Hello</div>
+      <div class="title" id="mainTitle">My Life</div>
+      <div class="subtitle">You are the creator — good or bad</div>
+    </header>
+
+    <!-- FILTERS -->
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
+      <button class="filter-btn" data-filter="notdone" onclick="setFilter('notdone')">Not Done</button>
+      <button class="filter-btn" data-filter="done" onclick="setFilter('done')">Completed</button>
+    </div>
+
+    <!-- LIST -->
+    <main id="list"></main>
+
+    <!-- BOTTOM BAR -->
+    <div class="bottom-bar">
+      <button class="bottom-btn secondary" onclick="openAdd()">Add Action</button>
+      <button class="bottom-btn primary" onclick="openPriorities()">Priorities</button>
+    </div>
+
+    <!-- POPUP: Do you like the result? -->
+    <div class="overlay" id="resultOverlay">
+      <div class="popup">
+        <div class="popup-title">Do you like the result?</div>
+        <div class="popup-sub" id="popupActionName"></div>
+        <div class="popup-actions">
+          <button class="popup-btn yes" onclick="likeResult(true)">Yes — keep it</button>
+          <button class="popup-btn no" onclick="likeResult(false)">No</button>
+          <button class="popup-btn close" onclick="closePopup()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- POPUP: What do you want to do? -->
+    <div class="overlay" id="adjustOverlay">
+      <div class="popup">
+        <div class="popup-title">What do you want to do?</div>
+        <div class="popup-sub" id="adjustActionName"></div>
+        <div class="popup-actions">
+          <button class="popup-btn edit" onclick="startEdit()">Edit this action</button>
+          <button class="popup-btn edit" onclick="deleteAction()">Delete this action</button>
+          <button class="popup-btn close" onclick="closeAdjust()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EDIT SCREEN -->
+    <div class="edit-screen" id="editScreen">
+      <div class="edit-header">
+        <button class="back-btn" onclick="closeEdit()">← Back</button>
+        <div style="font-weight:600;font-size:1.05rem;" id="editTitle">Edit Action</div>
+      </div>
+      <div class="edit-body">
+        <label class="form-label">Action / Activity</label>
+        <input class="form-input" id="editName" type="text" placeholder="What do you do?" />
+        <label class="form-label">Desired Result (optional)</label>
+        <input class="form-input" id="editResult" type="text" placeholder="What result do you want?" />
+        <button class="bottom-btn primary" style="margin-top:10px;" onclick="saveEdit()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'dreamlife_v2';
+
+    // Seed actions matching the drawings (common daily life)
+    const SEED = [
+      { id: 'a1', name: 'Wake up / get out of bed', category: 'morning', done: false },
+      { id: 'a2', name: 'Drink water', category: 'morning', done: false },
+      { id: 'a3', name: 'Brush teeth', category: 'morning', done: false },
+      { id: 'a4', name: 'Make bed', category: 'morning', done: false },
+      { id: 'a5', name: 'Morning movement / stretch', category: 'morning', done: false },
+      { id: 'a6', name: 'Pray / quiet time / meditate', category: 'morning', done: false },
+      { id: 'a7', name: 'Eat breakfast', category: 'morning', done: false },
+      { id: 'a8', name: 'Review top priorities', category: 'morning', done: false },
+      { id: 'a9', name: 'Get ready / shower / dress', category: 'morning', done: false },
+      { id: 'a10', name: 'First deep work block', category: 'work', done: false },
+      { id: 'a11', name: 'Check & clear messages', category: 'work', done: false },
+      { id: 'a12', name: 'Meetings / calls', category: 'work', done: false },
+      { id: 'a13', name: 'Lunch break (real break)', category: 'work', done: false },
+      { id: 'a14', name: 'Second deep work block', category: 'work', done: false },
+      { id: 'a15', name: 'Plan tomorrow', category: 'work', done: false },
+      { id: 'a16', name: 'Move body (walk / gym)', category: 'health', done: false },
+      { id: 'a17', name: 'Drink water throughout day', category: 'health', done: false },
+      { id: 'a18', name: 'Eat a real meal', category: 'health', done: false },
+      { id: 'a19', name: 'Get outside / sunlight', category: 'health', done: false },
+      { id: 'a20', name: 'Meaningful check-in with spouse/partner', category: 'relationships', done: false },
+      { id: 'a21', name: 'Time with kids / family', category: 'relationships', done: false },
+      { id: 'a22', name: 'Text or call a friend/parent', category: 'relationships', done: false },
+      { id: 'a23', name: 'Dinner', category: 'evening', done: false },
+      { id: 'a24', name: 'Tidy key areas', category: 'evening', done: false },
+      { id: 'a25', name: 'Wind-down routine', category: 'evening', done: false },
+      { id: 'a26', name: 'Read or learn something', category: 'evening', done: false },
+      { id: 'a27', name: 'Lights out / sleep', category: 'evening', done: false }
+    ];
+
+    let state = load();
+    let currentFilter = 'all';
+    let pendingActionId = null;
+    let editingId = null;
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch {}
+      return {
+        name: 'Jeff',
+        actions: SEED.map(a => ({...a}))
+      };
+    }
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function setFilter(f) {
+      currentFilter = f;
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === f);
+      });
+      render();
+    }
+
+    function render() {
+      document.getElementById('greeting').textContent = 'Hello ' + (state.name || '');
+      document.getElementById('mainTitle').textContent = (state.name || 'My') + "'s Life";
+
+      const list = document.getElementById('list');
+      list.innerHTML = '';
+
+      let actions = state.actions;
+      if (currentFilter === 'done') actions = actions.filter(a => a.done);
+      if (currentFilter === 'notdone') actions = actions.filter(a => !a.done);
+
+      if (actions.length === 0) {
+        list.innerHTML = '<div class="empty-state">Nothing here yet.<br>Add an action or change the filter.</div>';
+        return;
+      }
+
+      const categories = ['morning', 'work', 'health', 'relationships', 'evening', 'custom'];
+      const labels = {
+        morning: 'Morning',
+        work: 'Work',
+        health: 'Health',
+        relationships: 'Relationships',
+        evening: 'Evening',
+        custom: 'Custom'
+      };
+
+      categories.forEach(cat => {
+        const items = actions.filter(a => (a.category || 'custom') === cat);
+        if (items.length === 0) return;
+
+        const lab = document.createElement('div');
+        lab.className = 'section-label';
+        lab.textContent = labels[cat] || cat;
+        list.appendChild(lab);
+
+        items.forEach(action => {
+          const row = document.createElement('div');
+          row.className = 'action-row' + (action.done ? ' done' : '');
+          row.innerHTML = `
+            <div class="status-dot">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#052e16" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <div class="action-info">
+              <div class="action-name">${action.name}</div>
+              ${action.result ? `<div class="action-meta">Result: ${action.result}</div>` : ''}
+            </div>
+          `;
+          row.addEventListener('click', () => onActionTap(action.id));
+          list.appendChild(row);
+        });
+      });
+    }
+
+    function onActionTap(id) {
+      const action = state.actions.find(a => a.id === id);
+      if (!action) return;
+
+      if (action.done) {
+        // already done → open adjust options
+        pendingActionId = id;
+        document.getElementById('adjustActionName').textContent = action.name;
+        document.getElementById('adjustOverlay').classList.add('show');
+      } else {
+        // mark done → ask "Do you like the result?"
+        pendingActionId = id;
+        document.getElementById('popupActionName').textContent = action.name;
+        document.getElementById('resultOverlay').classList.add('show');
+      }
+    }
+
+    function likeResult(liked) {
+      const action = state.actions.find(a => a.id === pendingActionId);
+      if (!action) return;
+
+      action.done = true;
+      action.liked = liked;
+      save();
+      closePopup();
+
+      if (!liked) {
+        // immediately offer adjust
+        document.getElementById('adjustActionName').textContent = action.name;
+        document.getElementById('adjustOverlay').classList.add('show');
+      } else {
+        render();
+      }
+    }
+
+    function closePopup() {
+      document.getElementById('resultOverlay').classList.remove('show');
+      pendingActionId = null;
+      render();
+    }
+
+    function closeAdjust() {
+      document.getElementById('adjustOverlay').classList.remove('show');
+      pendingActionId = null;
+      render();
+    }
+
+    function startEdit() {
+      const action = state.actions.find(a => a.id === pendingActionId);
+      if (!action) return;
+      editingId = pendingActionId;
+      document.getElementById('editTitle').textContent = 'Edit Action';
+      document.getElementById('editName').value = action.name;
+      document.getElementById('editResult').value = action.result || '';
+      document.getElementById('adjustOverlay').classList.remove('show');
+      document.getElementById('editScreen').classList.add('show');
+    }
+
+    function deleteAction() {
+      if (!confirm('Delete this action?')) return;
+      state.actions = state.actions.filter(a => a.id !== pendingActionId);
+      save();
+      closeAdjust();
+    }
+
+    function closeEdit() {
+      document.getElementById('editScreen').classList.remove('show');
+      editingId = null;
+      render();
+    }
+
+    function saveEdit() {
+      const name = document.getElementById('editName').value.trim();
+      if (!name) return;
+      const action = state.actions.find(a => a.id === editingId);
+      if (action) {
+        action.name = name;
+        action.result = document.getElementById('editResult').value.trim() || null;
+        save();
+      }
+      closeEdit();
+    }
+
+    function openAdd() {
+      editingId = null;
+      document.getElementById('editTitle').textContent = 'Add Action';
+      document.getElementById('editName').value = '';
+      document.getElementById('editResult').value = '';
+      document.getElementById('editScreen').classList.add('show');
+      // temporary new id will be created on save
+      document.querySelector('#editScreen .bottom-btn.primary').onclick = function() {
+        const name = document.getElementById('editName').value.trim();
+        if (!name) return;
+        state.actions.push({
+          id: 'c_' + Date.now(),
+          name,
+          result: document.getElementById('editResult').value.trim() || null,
+          category: 'custom',
+          done: false
+        });
+        save();
+        closeEdit();
+      };
+    }
+
+    function openPriorities() {
+      alert('Priorities view coming next.\nFor now use the list and mark what matters most.');
+    }
+
+    // init
+    render();
+  </script>
+</body>
+</html>
