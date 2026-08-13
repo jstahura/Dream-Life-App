@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0c1222" />
+  <title>Dream Life</title>
+  <style>
+    :root {
+      --bg: #0c1222;
+      --surface: #151c2e;
+      --surface2: #1c2538;
+      --border: #2a3548;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --green: #22c55e;
+      --red: #ef4444;
+      --accent: #38bdf8;
+      --radius: 14px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    }
+    #app {
+      height: 100%;
+      height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+      background: var(--bg);
+      overflow: hidden;
+    }
+    .view {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: none;
+      flex-direction: column;
+      background: var(--bg);
+    }
+    .view.active { display: flex; }
+    header {
+      flex-shrink: 0;
+      padding: calc(var(--safe-top) + 14px) 16px 12px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; }
+    .date-label { font-size: 0.8rem; color: var(--muted); font-weight: 500; }
+    .progress-bar-wrap {
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .progress-bar {
+      height: 100%;
+      background: var(--green);
+      border-radius: 2px;
+      transition: width 0.25s ease;
+      width: 0%;
+    }
+    .progress-text {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 6px;
+      text-align: right;
+    }
+    main {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding: 12px 16px 100px;
+    }
+    nav {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0 calc(var(--safe-bottom) + 8px);
+      z-index: 50;
+    }
+    .nav-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.65rem;
+      font-weight: 500;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    .nav-btn.active { color: var(--accent); }
+    .nav-btn svg { width: 22px; height: 22px; }
+    .section-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      font-weight: 600;
+      margin: 16px 0 8px 4px;
+    }
+    .section-label:first-child { margin-top: 4px; }
+    .action-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface);
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .action-item:active { transform: scale(0.985); }
+    .action-item.done {
+      background: color-mix(in srgb, var(--green) 12%, var(--surface));
+      border-color: color-mix(in srgb, var(--green) 25%, transparent);
+    }
+    .status-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2.5px solid var(--red);
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+    }
+    .action-item.done .status-circle {
+      background: var(--green);
+      border-color: var(--green);
+    }
+    .status-circle svg { width: 14px; height: 14px; opacity: 0; }
+    .action-item.done .status-circle svg { opacity: 1; }
+    .action-name {
+      font-size: 0.95rem;
+      font-weight: 500;
+      line-height: 1.3;
+      flex: 1;
+    }
+    .action-item.done .action-name {
+      color: var(--muted);
+      text-decoration: line-through;
+    }
+    .reflect-prompt {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      line-height: 1.35;
+    }
+    .choice-item {
+      background: var(--surface);
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    .choice-item .label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    textarea, input[type="text"] {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 70px;
+    }
+    textarea:focus, input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary { background: var(--accent); color: #0c1222; }
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      margin-top: 10px;
+    }
+    .stats-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .stat-box {
+      flex: 1;
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 14px;
+      text-align: center;
+    }
+    .stat-num {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .change-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 10px;
+      border-left: 4px solid var(--accent);
+    }
+    .change-date {
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .change-old {
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-decoration: line-through;
+      margin-bottom: 4px;
+    }
+    .change-new {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--green);
+    }
+    .add-form {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .add-form input {
+      flex: 1;
+      min-height: 48px;
+    }
+    .add-form .btn {
+      width: auto;
+      padding: 0 18px;
+      flex-shrink: 0;
+    }
+    .manage-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin-bottom: 6px;
+    }
+    .toggle {
+      width: 48px;
+      height: 28px;
+      background: var(--surface2);
+      border-radius: 14px;
+      position: relative;
+      cursor: pointer;
+    }
+    .toggle.on { background: var(--green); }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      background: white;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.2s;
+    }
+    .toggle.on::after { transform: translateX(20px); }
+    .settings-section { margin-bottom: 28px; }
+    .settings-section h3 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .settings-btn {
+      width: 100%;
+      text-align: left;
+      background: var(--surface);
+      border: none;
+      color: var(--text);
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    .settings-btn.danger { color: var(--red); }
+    .center-msg {
+      text-align: center;
+      color: var(--muted);
+      padding: 40px 20px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .hidden { display: none !important; }
+    .toast {
+      position: fixed;
+      top: calc(var(--safe-top) + 20px);
+      left: 16px;
+      right: 16px;
+      max-width: 448px;
+      margin: 0 auto;
+      background: var(--green);
+      color: #052e16;
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-align: center;
+      z-index: 100;
+      transform: translateY(-140%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .toast.show { transform: translateY(0); }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="toast" class="toast"></div>
+
+    <div id="view-home" class="view active">
+      <header>
+        <div class="header-top">
+          <h1>Dream Life</h1>
+          <div class="date-label" id="dateLabel"></div>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="progress-text" id="progressText">0 of 0 done</div>
+      </header>
+      <main id="actionList"></main>
+    </div>
+
+    <div id="view-reflect" class="view">
+      <header>
+        <div class="header-top"><h1>Reflect & Change</h1></div>
+      </header>
+      <main>
+        <div id="reflectStep1">
+          <p class="reflect-prompt">Which action produced a result you don’t like?</p>
+          <div id="reflectChoices"></div>
+          <button class="btn btn-secondary" onclick="showView('home')">Back to list</button>
+        </div>
+        <div id="reflectStep2" class="hidden">
+          <p class="reflect-prompt" id="selectedActionName"></p>
+          <div class="form-group">
+            <label>What result did you get?</label>
+            <textarea id="resultInput" placeholder="e.g. Felt scattered and behind by 3pm"></textarea>
+          </div>
+          <div class="form-group">
+            <label>What thought or belief was driving that action?</label>
+            <textarea id="thoughtInput" placeholder="e.g. I have to respond to every email immediately"></textarea>
+          </div>
+          <div class="form-group">
+            <label>What will you do differently?</label>
+            <textarea id="newBehaviorInput" placeholder="e.g. Only check email at 11am and 4pm"></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="saveChange()">Save this change</button>
+          <button class="btn btn-secondary" onclick="backToReflectStep1()">Choose different action</button>
+        </div>
+        <div id="reflectSuccess" class="hidden">
+          <div class="center-msg" style="padding-top: 60px;">
+            <div style="font-size: 2.5rem; margin-bottom: 12px;">✓</div>
+            <div style="font-size: 1.2rem; font-weight: 600; color: var(--green); margin-bottom: 8px;">One change.</div>
+            <div style="font-size: 1.1rem; margin-bottom: 24px;">Your life just moved.</div>
+            <button class="btn btn-primary" onclick="showView('home')">Back to today</button>
+            <button class="btn btn-secondary" onclick="startReflect()">Change another</button>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div id="view-history" class="view">
+      <header>
+        <div class="header-top"><h1>Your Changes</h1></div>
+      </header>
+      <main>
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-num" id="statWeek">0</div><div class="stat-label">This week</div></div>
+          <div class="stat-box"><div class="stat-num" id="statMonth">0</div><div class="stat-label">This month</div></div>
+          <div class="stat-box"><div class="stat-num" id="statAll">0</div><div class="stat-label">All time</div></div>
+        </div>
+        <div id="historyList"></div>
+      </main>
+    </div>
+
+    <div id="view-manage" class="view">
+      <header>
+        <div class="header-top"><h1>Your Actions</h1></div>
+      </header>
+      <main>
+        <div class="add-form">
+          <input type="text" id="newActionInput" placeholder="Add a custom action..." />
+          <button class="btn btn-primary" onclick="addCustomAction()">Add</button>
+        </div>
+        <div class="section-label">Active actions</div>
+        <div id="manageList"></div>
+      </main>
+    </div>
+
+    <div id="view-settings" class="view">
+      <header>
+        <div class="header-top"><h1>Settings</h1></div>
+      </header>
+      <main>
+        <div class="settings-section">
+          <h3>Data</h3>
+          <button class="settings-btn" onclick="exportData()">Export my data (JSON)</button>
+          <button class="settings-btn" onclick="resetToday()">Reset today’s marks</button>
+          <button class="settings-btn danger" onclick="clearAllData()">Clear all data</button>
+        </div>
+        <div class="settings-section">
+          <h3>About</h3>
+          <p style="font-size: 0.9rem; color: var(--muted); line-height: 1.5; padding: 0 4px;">
+            Dream Life helps you see the actions that create your results, then rewrite one of them in under a minute.
+          </p>
+        </div>
+      </main>
+    </div>
+
+    <nav>
+      <button class="nav-btn active" data-view="home" onclick="showView('home')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
+        Today
+      </button>
+      <button class="nav-btn" data-view="reflect" onclick="startReflect()">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        Reflect
+      </button>
+      <button class="nav-btn" data-view="history" onclick="showView('history')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Changes
+      </button>
+      <button class="nav-btn" data-view="manage" onclick="showView('manage')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        Actions
+      </button>
+      <button class="nav-btn" data-view="settings" onclick="showView('settings')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Settings
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    const STORAGE_KEYS = {
+      actions: 'dreamlife_actions_v1',
+      daily: 'dreamlife_daily_v1',
+      changes: 'dreamlife_changes_v1'
+    };
+
+    const SEED_ACTIONS = [
+      { id: 'm_wake', name: 'Wake up / get out of bed', category: 'morning' },
+      { id: 'm_water', name: 'Drink water', category: 'morning' },
+      { id: 'm_bed', name: 'Make bed', category: 'morning' },
+      { id: 'm_move', name: 'Morning movement or stretch', category: 'morning' },
+      { id: 'm_pray', name: 'Pray / meditate / quiet time', category: 'morning' },
+      { id: 'm_breakfast', name: 'Eat breakfast', category: 'morning' },
+      { id: 'm_priorities', name: 'Review top 3 priorities', category: 'morning' },
+      { id: 'm_ready', name: 'Get ready / hygiene', category: 'morning' },
+      { id: 'w_deep1', name: 'First deep work block', category: 'work' },
+      { id: 'w_email', name: 'Check & clear email / messages', category: 'work' },
+      { id: 'w_meetings', name: 'Meetings or calls', category: 'work' },
+      { id: 'w_lunch', name: 'Lunch break (actual break)', category: 'work' },
+      { id: 'w_deep2', name: 'Second deep work block', category: 'work' },
+      { id: 'w_plan', name: 'Plan tomorrow’s priorities', category: 'work' },
+      { id: 'w_shutdown', name: 'Wrap up / shut down work', category: 'work' },
+      { id: 'h_water', name: 'Drink water throughout day', category: 'health' },
+      { id: 'h_move', name: 'Move body (walk, gym, sports)', category: 'health' },
+      { id: 'h_meal', name: 'Eat a real meal', category: 'health' },
+      { id: 'h_outside', name: 'Get outside / sunlight', category: 'health' },
+      { id: 'h_winddown', name: 'Wind-down routine before bed', category: 'health' },
+      { id: 'r_spouse', name: 'Meaningful check-in with spouse/partner', category: 'relationships' },
+      { id: 'r_family', name: 'Time or attention with kids / family', category: 'relationships' },
+      { id: 'r_friend', name: 'Text or call a friend or parent', category: 'relationships' },
+      { id: 'r_kindness', name: 'One act of service or kindness', category: 'relationships' },
+      { id: 'e_dinner', name: 'Dinner', category: 'evening' },
+      { id: 'e_tidy', name: 'Clean up / tidy key areas', category: 'evening' },
+      { id: 'e_reflect', name: 'Reflect on the day (this app)', category: 'evening' },
+      { id: 'e_read', name: 'Read or learn something', category: 'evening' },
+      { id: 'e_prep', name: 'Prepare for tomorrow', category: 'evening' },
+      { id: 'e_sleep', name: 'Lights out / sleep', category: 'evening' }
+    ];
+
+    function todayStr() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+
+    function load(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch { return fallback; }
+    }
+
+    function save(key, data) {
+      localStorage.setItem(key, JSON.stringify(data));
+    }
+
+    function getActions() {
+      let actions = load(STORAGE_KEYS.actions, null);
+      if (!actions) {
+        actions = SEED_ACTIONS.map(a => ({
+          ...a,
+          isPreSeeded: true,
+          isActive: true,
+          createdAt: new Date().toISOString()
+        }));
+        save(STORAGE_KEYS.actions, actions);
+      }
+      return actions;
+    }
+
+    function getDaily() { return load(STORAGE_KEYS.daily, {}); }
+    function getChanges() { return load(STORAGE_KEYS.changes, []); }
+
+    function getTodayStatus(actionId) {
+      const daily = getDaily();
+      const day = daily[todayStr()] || {};
+      return day[actionId] === true;
+    }
+
+    function setTodayStatus(actionId, done) {
+      const daily = getDaily();
+      if (!daily[todayStr()]) daily[todayStr()] = {};
+      daily[todayStr()][actionId] = done;
+      save(STORAGE_KEYS.daily, daily);
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2600);
+    }
+
+    function showView(name) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-' + name).classList.add('active');
+      document.querySelectorAll('.nav-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.view === name);
+      });
+      if (name === 'home') renderHome();
+      if (name === 'history') renderHistory();
+      if (name === 'manage') renderManage();
+    }
+
+    function renderHome() {
+      const actions = getActions().filter(a => a.isActive);
+      const list = document.getElementById('actionList');
+      list.innerHTML = '';
+      const categories = ['morning', 'work', 'health', 'relationships', 'evening', 'custom'];
+      const labels = { morning: 'Morning', work: 'Work', health: 'Health', relationships: 'Relationships', evening: 'Evening', custom: 'Custom' };
+      let doneCount = 0;
+      const total = actions.length;
+
+      categories.forEach(cat => {
+        const items = actions.filter(a => (a.category || 'custom') === cat);
+        if (items.length === 0) return;
+        const label = document.createElement('div');
+        label.className = 'section-label';
+        label.textContent = labels[cat] || cat;
+        list.appendChild(label);
+        items.forEach(action => {
+          const done = getTodayStatus(action.id);
+          if (done) doneCount++;
+          const el = document.createElement('div');
+          el.className = 'action-item' + (done ? ' done' : '');
+          el.innerHTML = `
+            <div class="status-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#052e16" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <div class="action-name">${action.name}</div>
+          `;
+          el.addEventListener('click', () => {
+            setTodayStatus(action.id, !done);
+            renderHome();
+          });
+          list.appendChild(el);
+        });
+      });
+
+      const pct = total ? Math.round((doneCount / total) * 100) : 0;
+      document.getElementById('progressBar').style.width = pct + '%';
+      document.getElementById('progressText').textContent = `${doneCount} of ${total} done`;
+      const d = new Date();
+      document.getElementById('dateLabel').textContent = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    let selectedAction = null;
+
+    function startReflect() {
+      selectedAction = null;
+      document.getElementById('reflectStep1').classList.remove('hidden');
+      document.getElementById('reflectStep2').classList.add('hidden');
+      document.getElementById('reflectSuccess').classList.add('hidden');
+      showView('reflect');
+      const actions = getActions().filter(a => a.isActive);
+      const container = document.getElementById('reflectChoices');
+      container.innerHTML = '';
+      const notDone = actions.filter(a => !getTodayStatus(a.id));
+      const done = actions.filter(a => getTodayStatus(a.id));
+      if (notDone.length) {
+        const lab = document.createElement('div');
+        lab.className = 'section-label';
+        lab.textContent = 'Not done today';
+        container.appendChild(lab);
+        notDone.forEach(a => addChoice(a, container));
+      }
+      if (done.length) {
+        const lab = document.createElement('div');
+        lab.className = 'section-label';
+        lab.textContent = 'Done today';
+        container.appendChild(lab);
+        done.forEach(a => addChoice(a, container));
+      }
+    }
+
+    function addChoice(action, container) {
+      const el = document.createElement('div');
+      el.className = 'choice-item';
+      el.innerHTML = `<div class="label">${action.category || 'custom'}</div><div>${action.name}</div>`;
+      el.addEventListener('click', () => {
+        selectedAction = action;
+        document.getElementById('selectedActionName').textContent = action.name;
+        document.getElementById('resultInput').value = '';
+        document.getElementById('thoughtInput').value = '';
+        document.getElementById('newBehaviorInput').value = '';
+        document.getElementById('reflectStep1').classList.add('hidden');
+        document.getElementById('reflectStep2').classList.remove('hidden');
+      });
+      container.appendChild(el);
+    }
+
+    function backToReflectStep1() {
+      document.getElementById('reflectStep2').classList.add('hidden');
+      document.getElementById('reflectStep1').classList.remove('hidden');
+    }
+
+    function saveChange() {
+      const newBehavior = document.getElementById('newBehaviorInput').value.trim();
+      if (!newBehavior) {
+        showToast('Please write what you will do differently');
+        return;
+      }
+      if (!selectedAction) return;
+      const changes = getChanges();
+      changes.unshift({
+        id: 'chg_' + Date.now(),
+        date: todayStr(),
+        actionId: selectedAction.id,
+        oldActionName: selectedAction.name,
+        newBehavior,
+        underlyingThought: document.getElementById('thoughtInput').value.trim() || null,
+        intendedResult: document.getElementById('resultInput').value.trim() || null,
+        createdAt: new Date().toISOString()
+      });
+      save(STORAGE_KEYS.changes, changes);
+      document.getElementById('reflectStep2').classList.add('hidden');
+      document.getElementById('reflectSuccess').classList.remove('hidden');
+    }
+
+    function renderHistory() {
+      const changes = getChanges();
+      const now = new Date();
+      const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
+      const monthAgo = new Date(now); monthAgo.setDate(monthAgo.getDate() - 30);
+      let week = 0, month = 0;
+      changes.forEach(c => {
+        const d = new Date(c.date);
+        if (d >= weekAgo) week++;
+        if (d >= monthAgo) month++;
+      });
+      document.getElementById('statWeek').textContent = week;
+      document.getElementById('statMonth').textContent = month;
+      document.getElementById('statAll').textContent = changes.length;
+      const list = document.getElementById('historyList');
+      if (changes.length === 0) {
+        list.innerHTML = '<div class="center-msg">No changes yet.<br>When you rewrite an action it will appear here.</div>';
+        return;
+      }
+      list.innerHTML = changes.map(c => `
+        <div class="change-card">
+          <div class="change-date">${formatDate(c.date)}</div>
+          <div class="change-old">${c.oldActionName}</div>
+          <div class="change-new">→ ${c.newBehavior}</div>
+        </div>
+      `).join('');
+    }
+
+    function formatDate(str) {
+      const d = new Date(str + 'T12:00:00');
+      return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    function renderManage() {
+      const actions = getActions();
+      const list = document.getElementById('manageList');
+      list.innerHTML = actions.map(a => `
+        <div class="manage-item">
+          <div class="name">${a.name}</div>
+          <div class="toggle ${a.isActive ? 'on' : ''}" onclick="toggleAction('${a.id}')"></div>
+        </div>
+      `).join('');
+    }
+
+    function toggleAction(id) {
+      const actions = getActions();
+      const a = actions.find(x => x.id === id);
+      if (a) {
+        a.isActive = !a.isActive;
+        save(STORAGE_KEYS.actions, actions);
+        renderManage();
+      }
+    }
+
+    function addCustomAction() {
+      const input = document.getElementById('newActionInput');
+      const name = input.value.trim();
+      if (!name) return;
+      const actions = getActions();
+      actions.push({
+        id: 'custom_' + Date.now(),
+        name,
+        category: 'custom',
+        isPreSeeded: false,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      });
+      save(STORAGE_KEYS.actions, actions);
+      input.value = '';
+      renderManage();
+      showToast('Action added');
+    }
+
+    function exportData() {
+      const data = {
+        exportedAt: new Date().toISOString(),
+        actions: getActions(),
+        daily: getDaily(),
+        changes: getChanges()
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `dream-life-export-${todayStr()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Data exported');
+    }
+
+    function resetToday() {
+      if (!confirm('Clear all green/red marks for today?')) return;
+      const daily = getDaily();
+      delete daily[todayStr()];
+      save(STORAGE_KEYS.daily, daily);
+      showToast('Today reset');
+      renderHome();
+    }
+
+    function clearAllData() {
+      if (!confirm('This will permanently delete all your actions, marks, and changes. Continue?')) return;
+      localStorage.removeItem(STORAGE_KEYS.actions);
+      localStorage.removeItem(STORAGE_KEYS.daily);
+      localStorage.removeItem(STORAGE_KEYS.changes);
+      showToast('All data cleared');
+      showView('home');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderHome();
+    });
+  </script>
+</body>
+</html>
